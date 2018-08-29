@@ -116,7 +116,7 @@ for idx, annotation in enumerate(annotation_sets):
 
 	seq = iaa.Sequential([
 	    iaa.Fliplr(0.75), # horizontal flips
-	    iaa.Crop(percent=(0, 0.1)), # random crops
+	    iaa.Crop(percent=(0, 0.05)), # random crops
 	    iaa.Sometimes(0.5,
 	        iaa.GaussianBlur(sigma=(0, 0.5))
 	    ),
@@ -126,7 +126,7 @@ for idx, annotation in enumerate(annotation_sets):
 	    iaa.Affine(
 	        scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
 	        translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
-	        rotate=(-15, 15),
+	        rotate=(-1, 1),
 	        shear=(-3, 3)
 	    )
 	], random_order=True)
@@ -139,52 +139,44 @@ for idx, annotation in enumerate(annotation_sets):
 
 	#=============================================================
 
-	m = image_aug.copy()
-
-	for i in range(len(arena_bbs.bounding_boxes)):
-	    arena_after = arena_bbs_aug.bounding_boxes[i]
-	    newImage = cv2.rectangle(m, (int(arena_after.x2), int(arena_after.y2)), (int(arena_after.x1), int(arena_after.y1)), (255,0,0), 3)
-
-	for i in range(len(animal_bbs.bounding_boxes)):
-	    animal_after = animal_bbs_aug.bounding_boxes[i]
-	    newImage = cv2.rectangle(m, (int(animal_after.x2), int(animal_after.y2)), (int(animal_after.x1), int(animal_after.y1)), (255,0,0), 3)
-
-	#=============================================================
-
 	tree = ET.parse(annotation.ann_loc)
 	root = tree.getroot()
 
-	for obj in root.findall('object'):
+	m = image_aug.copy()
 
-		arenas = [x for x in obj.findall('name') if x.text=="arena"]
-		animals = [x for x in obj.findall('name') if x.text=='animal']
+	#--------------------------------------------------------------
 
-		#=============================================================
+	arenas = [x for x in root.findall('object') if x.find('name').text=='arena']
+	animals = [x for x in root.findall('object') if x.find('name').text=='animal']
 
-		for arena in arenas:
-			num = len(arenas)
-			for i in range(num):
 
-				bb = obj.find('bndbox')
+	for i in range(len(arena_bbs_aug.bounding_boxes)):
+		arena_after = arena_bbs_aug.bounding_boxes[i]
 
-				bb.find('xmin').text = str(int(animal_after.x1))
-				bb.find('xmax').text = str(int(animal_after.x2))
-				bb.find('ymin').text = str(int(animal_after.y1))
-				bb.find('ymax').text = str(int(animal_after.y2))
-		#=============================================================
-					
-		for animal in animals:
-			num = len(animals)
-			for i in range(num):
+		bb = arenas[i].find('bndbox')
 
-				bb = obj.find('bndbox')
+		bb.find('xmin').text = str(int(arena_after.x1))
+		bb.find('xmax').text = str(int(arena_after.x2))
+		bb.find('ymin').text = str(int(arena_after.y1))
+		bb.find('ymax').text = str(int(arena_after.y2))
 
-				bb.find('xmin').text = str(int(arena_after.x1))
-				bb.find('xmax').text = str(int(arena_after.x2))
-				bb.find('ymin').text = str(int(arena_after.y1))
-				bb.find('ymax').text = str(int(arena_after.y2))
+		newImage = cv2.rectangle(m, (int(arena_after.x2), int(arena_after.y2)), (int(arena_after.x1), int(arena_after.y1)), (255,0,0), 3)
 
-	#=============================================================
+	for i in range(len(animal_bbs_aug.bounding_boxes)):
+		animal_after = animal_bbs_aug.bounding_boxes[i]
+
+		bb = animals[i].find('bndbox')
+
+		bb.find('xmin').text = str(int(animal_after.x1))
+		bb.find('xmax').text = str(int(animal_after.x2))
+		bb.find('ymin').text = str(int(animal_after.y1))
+		bb.find('ymax').text = str(int(animal_after.y2))
+
+		newImage = cv2.rectangle(m, (int(animal_after.x2), int(animal_after.y2)), (int(animal_after.x1), int(animal_after.y1)), (255,0,0), 3)
+
+
+
+
 	ann_write_path = 'C:/Users/Patrick/Desktop/darkflow/flies/annotations/aug_img_%s.xml' % idx
 	img_write_path = 'C:/Users/Patrick/Desktop/darkflow/flies/images/aug_img_%s.jpg' % idx
 
@@ -194,7 +186,7 @@ for idx, annotation in enumerate(annotation_sets):
 
 	tree.write(ann_write_path)
 	plt.imsave(img_write_path, image_aug)
-# 	#=============================================================
+# # 	#=============================================================
 	    
-	test_img_write_path = 'C:/Users/Patrick/Desktop/darkflow/flies/images/tests/%s' % idx
-	plt.imsave(test_img_write_path, newImage)
+# 	test_img_write_path = 'C:/Users/Patrick/Desktop/darkflow/aug_tests/%s' % idx
+# 	plt.imsave(test_img_write_path, newImage)
